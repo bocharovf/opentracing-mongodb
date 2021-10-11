@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MongoDB.Driver.Core.Extensions.DiagnosticSources\MongoDB.Driver.Core.Extensions.DiagnosticSources.csproj" />
+    <ProjectReference Include="..\..\src\OpenTracing.Contrib.MongoDB\OpenTracing.Contrib.MongoDB.csproj" />
   </ItemGroup>
 
 </Project>

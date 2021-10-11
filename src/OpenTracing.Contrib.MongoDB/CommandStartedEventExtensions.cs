@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MongoDB.Driver.Core.Events;
 
-namespace MongoDB.Driver.Core.Extensions.DiagnosticSources
+namespace OpenTracing.Contrib.MongoDB
 {
     public static class CommandStartedEventExtensions
     {

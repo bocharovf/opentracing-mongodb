@@ -1,19 +1,11 @@
-# MongoDB.Driver.Core.Extensions.DiagnosticSources
+# opentracing-mongodb
 
-![CI](https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources/workflows/CI/badge.svg)
-[![NuGet](https://img.shields.io/nuget/dt/MongoDB.Driver.Core.Extensions.DiagnosticSources.svg)](https://www.nuget.org/packages/MongoDB.Driver.Core.Extensions.DiagnosticSources) 
-[![NuGet](https://img.shields.io/nuget/vpre/MongoDB.Driver.Core.Extensions.DiagnosticSources.svg)](https://www.nuget.org/packages/MongoDB.Driver.Core.Extensions.DiagnosticSources)
-[![MyGet (dev)](https://img.shields.io/myget/jbogard-ci/v/MongoDB.Driver.Core.Extensions.DiagnosticSources.svg)](https://myget.org/gallery/jbogard-ci)
+OpenTracing instrumentation for MongoDB Driver 2.3 to 3.0. 
+Based on [MongoDB.Driver.Core.Extensions.DiagnosticSources](https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources) - consider to use it and newer [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-dotnet) if applicable.
 
 ## Usage
 
-This repo includes the package:
-
- - [MongoDB.Driver.Core.Extensions.DiagnosticSources](https://www.nuget.org/packages/MongoDB.Driver.Core.Extensions.DiagnosticSources/)
-
-The `MongoDB.Driver.Core.Extensions.DiagnosticSources` package extends the core MongoDB C# driver to expose telemetry information via `System.Diagnostics`.
-
-To use `MongoDB.Driver.Core.Extensions.DiagnosticSources`, you need to configure your `MongoClientSettings` to add this MongoDB event subscriber:
+Configure your `MongoClientSettings` to add MongoDB event subscriber:
 
 ```csharp
 var clientSettings = MongoClientSettings.FromUrl(mongoUrl);
@@ -21,11 +13,11 @@ clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityE
 var mongoClient = new MongoClient(clientSettings);
 ```
 
-To capture the command text as part of the activity:
+To capture the command text as part of the activity use ```ProcessCommandText``` callback:
 
 ```csharp
 var clientSettings = MongoClientSettings.FromUrl(mongoUrl);
-var options = new InstrumentationOptions { CaptureCommandText = true };
+var options = new InstrumentationOptions { ProcessCommandText = text => Console.WriteLine(text) };
 clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber(options));
 var mongoClient = new MongoClient(clientSettings);
 ```
@@ -34,14 +26,16 @@ To filter activities by collection name:
 
 ```csharp
 var clientSettings = MongoClientSettings.FromUrl(mongoUrl);
-var options = new InstrumentationOptions { ShouldStartActivity = @event => !"collectionToIgnore".Equals(@event.GetCollectionName()) };
+var options = new InstrumentationOptions { ShouldStartSpan = @event => !"collectionToIgnore".Equals(@event.GetCollectionName()) };
 clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber(options));
 var mongoClient = new MongoClient(clientSettings);
 ```
 
-This package exposes an [`ActivitySource`](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.activitysource?view=net-5.0) with a `Name` the same as the assembly, `MongoDB.Driver.Core.Extensions.DiagnosticSources`. Use this name in any [`ActivityListener`](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.activitylistener?view=net-5.0)-based listeners.
+It uses ```OpenTracing.Util.GlobalTracer.Instance``` by default but you could pass specific Tracer:
 
-All the available [OpenTelemetry semantic tags](https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/database.md) are set.
- 
-This package supports MongoDB C# Driver versions 2.3 to 3.0.
-
+```csharp
+var clientSettings = MongoClientSettings.FromUrl(mongoUrl);
+var options = new InstrumentationOptions { Tracer = tracer };
+clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber(options));
+var mongoClient = new MongoClient(clientSettings);
+```
