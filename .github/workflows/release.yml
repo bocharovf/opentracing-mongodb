@@ -5,31 +5,34 @@ on:
     types: [created]
 
 jobs:
-  deploy:
+  build:
+    strategy:
+      fail-fast: false
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 5.0.x
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --no-restore
-      - name: Test
-        run: dotnet test --no-build --verbosity normal
-      - name: Push to NuGet
-        env:
-          NUGET_URL: https://api.nuget.org/v3/index.json
-          NUGET_API_KEY: ${{ secrets.NUGET_API_TOKEN }}
-        run: ./Push.ps1
-        shell: pwsh
-      - name: Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: artifacts
-          path: artifacts/**/*
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup dotnet 5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.100'
+    - name: Setup dotnet 3.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Build and Test
+      run: ./build.ps1
+      shell: pwsh
+    - name: Push to NuGet
+      env:
+        NUGET_URL: https://api.nuget.org/v3/index.json
+        NUGET_API_KEY: ${{ secrets.NUGET_API_TOKEN }}
+      run: ./push.ps1
+      shell: pwsh
+    - name: Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: artifacts/**/*
