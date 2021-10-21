@@ -163,5 +163,73 @@ namespace OpenTracing.Contrib.MongoDB.Tests
             spans.Count.ShouldBe(1);
             spans.First(s => s.OperationName == "my_collection.insert");
         }
+
+        [Fact]
+        public void Should_log_command_text_to_span_when_option_set()
+        {
+            var tracer = new MockTracer();
+            var options = new InstrumentationOptions
+            {
+                Tracer = tracer,
+                LogProcessCommandTextToSpan = true
+            };
+
+            var behavior = new DiagnosticsActivityEventSubscriber(options);
+
+            var command = new BsonDocument(new Dictionary<string, object>
+            {
+                { "update", "my_collection" }
+            });
+
+            behavior.TryGetEventHandler<CommandStartedEvent>(out var startEvent).ShouldBeTrue();
+            behavior.TryGetEventHandler<CommandSucceededEvent>(out var stopEvent).ShouldBeTrue();
+
+            var connectionId = new ConnectionId(new ServerId(new ClusterId(), new DnsEndPoint("localhost", 8000)));
+            var databaseNamespace = new DatabaseNamespace("test");
+            startEvent(new CommandStartedEvent("update", command, databaseNamespace, null, 1, connectionId));
+            stopEvent(new CommandSucceededEvent("update", command, null, 1, connectionId, TimeSpan.Zero));
+
+            var spans = tracer.FinishedSpans();
+            spans.Count.ShouldBe(1);
+            spans.First().Tags.ShouldContainKey("db.name");
+            spans.First().Tags.ShouldContainKey("otel.status_code");
+
+            spans.First().LogEntries.Count.ShouldBe(1);
+            spans.First().LogEntries.First().Fields.ShouldContain(pair =>
+                pair.Key == "event" && pair.Value.ToString() == "{ \"update\" : \"my_collection\" }");
+        }
+
+        [Fact]
+        public void Should_log_command_text_to_span_when_option_no_set()
+        {
+            var tracer = new MockTracer();
+            var options = new InstrumentationOptions
+            {
+                Tracer = tracer,
+                LogProcessCommandTextToSpan = false
+            };
+
+            var behavior = new DiagnosticsActivityEventSubscriber(options);
+
+            var command = new BsonDocument(new Dictionary<string, object>
+            {
+                { "update", "my_collection" }
+            });
+
+            behavior.TryGetEventHandler<CommandStartedEvent>(out var startEvent).ShouldBeTrue();
+            behavior.TryGetEventHandler<CommandSucceededEvent>(out var stopEvent).ShouldBeTrue();
+
+            var connectionId = new ConnectionId(new ServerId(new ClusterId(), new DnsEndPoint("localhost", 8000)));
+            var databaseNamespace = new DatabaseNamespace("test");
+            startEvent(new CommandStartedEvent("update", command, databaseNamespace, null, 1, connectionId));
+            stopEvent(new CommandSucceededEvent("update", command, null, 1, connectionId, TimeSpan.Zero));
+
+            var spans = tracer.FinishedSpans();
+            spans.Count.ShouldBe(1);
+            spans.First().Tags.ShouldContainKey("db.name");
+            spans.First().Tags.ShouldContainKey("otel.status_code");
+
+            spans.First().LogEntries.Count.ShouldBe(0);
+        }
     }
 }
