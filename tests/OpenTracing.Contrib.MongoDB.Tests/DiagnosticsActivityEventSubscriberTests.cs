@@ -171,7 +171,7 @@ namespace OpenTracing.Contrib.MongoDB.Tests
             var options = new InstrumentationOptions
             {
                 Tracer = tracer,
-                LogProcessCommandTextToSpan = true
+                LogCommandTextToSpan = true
             };
 
             var behavior = new DiagnosticsActivityEventSubscriber(options);
@@ -206,7 +206,7 @@ namespace OpenTracing.Contrib.MongoDB.Tests
             var options = new InstrumentationOptions
             {
                 Tracer = tracer,
-                LogProcessCommandTextToSpan = false
+                LogCommandTextToSpan = false
             };
 
             var behavior = new DiagnosticsActivityEventSubscriber(options);

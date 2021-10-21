@@ -67,7 +67,7 @@ namespace OpenTracing.Contrib.MongoDB
                     break;
             }
 
-            if (_options.LogProcessCommandTextToSpan)
+            if (_options.LogCommandTextToSpan)
             {
 	            span.Log(@event.Command.ToString());
             }
